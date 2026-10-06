@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Today: Electronics</title>
+<title>Today: Cardboard Pinball</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
 
@@ -61,7 +61,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: clamp(1rem, 3vh, 2rem);
+    gap: clamp(0.7rem, 2vh, 1.3rem);
     width: 100%;
     max-width: 1250px;
     padding: 2.5vh 4vw;
@@ -88,7 +88,7 @@
 
   .word {
     display: flex;
-    font-size: clamp(3rem, 10vw, 8.5rem);
+    font-size: clamp(3rem, 9vw, 7rem);
     font-weight: 900;
     letter-spacing: -2px;
     line-height: 1;
@@ -160,16 +160,62 @@
   .playing .pad.l, .lit .pad.l { border-color: #ffaa28; box-shadow: 0 0 12px #ffaa28; }
   .lit .pad.r { border-color: #ffd24a; box-shadow: 0 0 16px #ffd24a; }
 
+  /* pads double as bumpers: a ring kicks out when the ball hits */
+  .pad::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 3px solid #ffd24a;
+    opacity: 0;
+  }
+  .pad.hit { background: #fff6cf; }
+  .pad.hit::after { animation: ring 0.6s ease-out; }
+  @keyframes ring {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(4.5); }
+  }
+
+  /* score pops off the far bumper */
+  .score {
+    position: absolute;
+    left: calc(100% + 22px);
+    top: 0;
+    color: #ffd24a;
+    font-size: clamp(1rem, 2vw, 1.6rem);
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-shadow: 0 0 14px rgba(255, 210, 74, 0.8);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .lit.fresh .score { animation: score 1.6s ease-out forwards; }
+  @keyframes score {
+    0%   { opacity: 0; transform: translate(-20%, -50%) scale(0.5); }
+    12%  { opacity: 1; transform: translate(0, -70%) scale(1.2); }
+    25%  { transform: translate(0, -80%) scale(1); }
+    75%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(0, -260%) scale(1); }
+  }
+
+  /* marquee chase: every so often the lit letters ripple like table lights */
+  .lit.chase .word span { animation: chase 0.6s ease-in-out calc(var(--i) * 0.07s); }
+  @keyframes chase {
+    50% { color: #fff6cf; text-shadow: 0 0 22px #ffd24a, 0 0 60px #ffaa28; }
+  }
+
+  /* chrome pinball rolling along the rail */
   .spark {
     position: absolute;
     top: 50%;
     left: 0;
-    width: 16px;
-    height: 16px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 10px #fff, 0 0 24px #ffd24a, 0 0 48px #ffaa28;
-    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 35% 30%, #ffffff 0%, #dfe4ec 22%, #8a93a3 62%, #2e3442 100%);
+    box-shadow: 0 0 14px rgba(255, 210, 74, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, calc(-50% - 15px));
     opacity: 0;
   }
   .playing .spark { animation: travel var(--dur) linear 0.5s forwards; }
@@ -202,30 +248,76 @@
     100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))); }
   }
 
-  /* ---------- the two bullets ---------- */
-  .items {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(0.6rem, 1.6vh, 1rem);
+  /* ---------- word subtitle + project note ---------- */
+  .kicker {
+    margin-top: -0.4rem;
+    color: #ffffff;
+    font-size: clamp(1.2rem, 2.6vw, 2rem);
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+  }
+  .kicker span { color: #c9a27a; }
+  .note {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.9rem;
+    border-radius: 50px;
+    background: rgba(46, 204, 168, 0.1);
+    border: 1px solid rgba(46, 204, 168, 0.35);
+    color: #7ee8cf;
+    font-size: clamp(0.8rem, 1.3vw, 1rem);
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.6s ease 0.5s, transform 0.6s ease 0.5s;
+  }
+  .note svg { width: 1.1em; height: 1.1em; }
+  .lit .kicker, .lit .note { opacity: 1; transform: none; }
+
+  /* ---------- requirements ---------- */
+  .reqs {
     width: 100%;
-    max-width: 860px;
-    margin-top: clamp(0.5rem, 2vh, 1.5rem);
+    max-width: 980px;
+    margin-top: clamp(0.2rem, 1vh, 0.8rem);
+  }
+  .reqs-head {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .reqs.started .reqs-head { opacity: 1; }
+
+  .items {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(0.5rem, 1.4vh, 0.8rem);
   }
 
   .item {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
-    padding: clamp(0.8rem, 2vh, 1.2rem) 1.4rem;
+    gap: 1rem;
+    padding: clamp(0.6rem, 1.6vh, 0.95rem) 1.2rem;
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     opacity: 0;
     transform: translateY(16px);
-    transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, background 0.5s ease;
   }
-  .item.shown { opacity: 1; transform: none; }
+  .item.shown { opacity: 0.6; transform: none; }
   .item.current {
+    opacity: 1;
     border-color: #ffd24a;
     background: rgba(255, 210, 74, 0.06);
     box-shadow: 0 0 0 1px #ffd24a, 0 0 32px rgba(255, 210, 74, 0.25);
@@ -233,26 +325,21 @@
 
   .icon {
     flex: 0 0 auto;
-    width: clamp(44px, 4.4vw, 56px);
-    height: clamp(44px, 4.4vw, 56px);
+    width: clamp(40px, 4vw, 50px);
+    height: clamp(40px, 4vw, 50px);
     border-radius: 50%;
     display: grid;
     place-items: center;
     background: rgba(255, 210, 74, 0.14);
     color: #ffd24a;
+    transition: all 0.4s ease;
   }
   .icon svg { width: 55%; height: 55%; }
-
-  .item.bonus .icon { background: rgba(46, 204, 168, 0.14); color: #2ecca8; }
-  .item.bonus.current {
-    border-color: #2ecca8;
-    background: rgba(46, 204, 168, 0.06);
-    box-shadow: 0 0 0 1px #2ecca8, 0 0 32px rgba(46, 204, 168, 0.25);
-  }
+  .item.current .icon { background: #ffd24a; color: #1a1b2e; box-shadow: 0 0 18px rgba(255, 210, 74, 0.7); }
 
   .label {
     color: rgba(255, 255, 255, 0.5);
-    font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+    font-size: clamp(0.65rem, 1vw, 0.8rem);
     font-weight: 700;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -260,19 +347,34 @@
 
   .title {
     color: #ffffff;
-    font-size: clamp(1.15rem, 2.3vw, 1.75rem);
+    font-size: clamp(1.05rem, 2vw, 1.5rem);
     font-weight: 700;
     line-height: 1.25;
   }
 
   .sub {
-    margin-top: 0.15rem;
+    margin-top: 0.1rem;
     color: rgba(255, 255, 255, 0.6);
-    font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+    font-size: clamp(0.8rem, 1.25vw, 0.95rem);
+  }
+  .later {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.5rem;
+    border-radius: 50px;
+    background: rgba(46, 204, 168, 0.14);
+    color: #7ee8cf;
+    font-size: 0.8em;
+    font-weight: 700;
+    white-space: nowrap;
   }
 
-  /* ---------- lightning ---------- */
-  #sky {
+  @media (max-width: 760px) {
+    .items { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- launched / ricocheting ball ---------- */
+  #table {
     position: fixed;
     inset: 0;
     width: 100%;
@@ -281,24 +383,7 @@
     pointer-events: none;
   }
 
-  .flash {
-    position: fixed;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    background: radial-gradient(circle at var(--fx, 50%) 0%, rgba(235, 240, 255, 0.9), rgba(180, 200, 255, 0.35) 60%, transparent);
-    opacity: 0;
-  }
-  .flash.go { animation: flash 0.55s ease-out; }
-  .flash.go.big { animation: flashBig 0.9s ease-out; }
-  @keyframes flash {
-    0% { opacity: 0; } 8% { opacity: 0.55; } 20% { opacity: 0.1; } 30% { opacity: 0.4; } 100% { opacity: 0; }
-  }
-  @keyframes flashBig {
-    0% { opacity: 0; } 6% { opacity: 0.9; } 16% { opacity: 0.15; } 26% { opacity: 0.75; } 40% { opacity: 0.2; } 100% { opacity: 0; }
-  }
-
-  /* the whole slide jolts when the big strike lands */
+  /* the whole slide thumps when the ball slams the bumper */
   .jolt .content { animation: jolt 0.4s ease-out; }
   @keyframes jolt {
     0%, 100% { transform: none; }
@@ -309,17 +394,16 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    #sky, .flash { display: none; }
+    #table { display: none; }
     .jolt .content { animation: none; }
-    .playing .word span, .playing .trace::before, .playing .spark, .lit.fresh .burst i { animation: none; }
+    .playing .word span, .playing .trace::before, .playing .spark, .lit.fresh .burst i, .lit.fresh .score, .lit.chase .word span, .pad.hit::after { animation: none; }
   }
 </style>
 </head>
 <body>
 
 <div class="glow"></div>
-<canvas id="sky"></canvas>
-<div class="flash" id="flash"></div>
+<canvas id="table"></canvas>
 
 <div class="content">
   <div class="eyebrow">Today we're working on</div>
@@ -331,37 +415,86 @@
       <span class="pad r"></span>
       <span class="spark"></span>
       <span class="burst" id="burst"></span>
+      <span class="score">+1,000,000</span>
     </div>
   </div>
 
-  <div class="items">
-    <div class="item" id="item1">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
-      </div>
-      <div>
-        <div class="label">Main activity</div>
-        <div class="title">Partner Exploration Activity</div>
-        <div class="sub">Work through the worksheet with your partner</div>
-      </div>
-    </div>
+  <div class="kicker">Cardboard <span>Pinball Machines</span></div>
+  <div class="note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+    Multi-class project — you won’t finish today
+  </div>
 
-    <div class="item bonus" id="item2">
-      <div class="icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+  <div class="reqs" id="reqs">
+    <div class="reqs-head">Requirements</div>
+    <div class="items" id="items">
+      <div class="item">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.7"/><path d="M2.5 20c0-3.2 2.5-5.5 5.5-5.5s5.5 2.3 5.5 5.5"/><path d="M14.5 14.8c.6-.2 1.3-.3 2-.3 2.7 0 5 2 5 5"/></svg>
+        </div>
+        <div>
+          <div class="label">Partner work</div>
+          <div class="title">Groups of 2–4</div>
+        </div>
       </div>
-      <div>
-        <div class="label">Finish early?</div>
-        <div class="title">Free time on the laser</div>
-        <div class="sub">Work on a project of your choice</div>
+
+      <div class="item">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>
+        </div>
+        <div>
+          <div class="label">Theme</div>
+          <div class="title">Pick a theme!</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4z"/><path d="m7.5 10.5 2-2M10.5 13.5l2-2M13.5 16.5l2-2"/></svg>
+        </div>
+        <div>
+          <div class="label">Dimensions</div>
+          <div class="title">36” × 24” trifold</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M12 8v2M8 11h8M8 14h8M8 17h8M8 20h8"/></svg>
+        </div>
+        <div>
+          <div class="label">Mechanical launcher</div>
+          <div class="title">Must propel the ball</div>
+          <div class="sub">We’ll start this in a future class</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+        </div>
+        <div>
+          <div class="label">Tech</div>
+          <div class="title">Electronics and/or laser cut</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/></svg>
+        </div>
+        <div>
+          <div class="label">3D print</div>
+          <div class="title">At least one 3D-printed element</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Swap this for 'Electricity' (or anything else) — timing adapts to the length.
-  const WORD = 'Electronics';
+  // Swap this for any word — timing adapts to the length.
+  const WORD = 'Pinball';
   const PER_LETTER = 0.13; // seconds between letters lighting up
 
   const wordEl = document.getElementById('word');
@@ -385,112 +518,74 @@
     burst.appendChild(p);
   }
 
-  const items = [document.getElementById('item1'), document.getElementById('item2')];
+  const items = [...document.querySelectorAll('#items .item')];
+  const reqs = document.getElementById('reqs');
   const body = document.body;
   let litTimer;
 
-  // Step 0 plays the word reveal; steps 1 and 2 bring in each bullet.
-  const MAX = 2;
+  // Step 0 plays the word reveal; each step after brings in one requirement.
+  const MAX = items.length;
   let step = 0;
 
-  // ---------- lightning ----------
-  const sky = document.getElementById('sky');
-  const ctx = sky.getContext('2d');
-  const flashEl = document.getElementById('flash');
+  // ---------- pinball ----------
+  const table = document.getElementById('table');
+  const ctx = table.getContext('2d');
   const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let bolts = [];
-  let skyRaf = 0;
-  let ambientTimer, startTimer;
+  const BALL = 13;      // radius, matches the 26px .spark
+  const RIDE = 15;      // how far above the rail the ball's centre sits
+  let flight = null;    // (t) => [x, y] or null when the ball has left
+  let trail = [];
+  let tableRaf = 0;
+  let chaseTimer, startTimer;
 
-  function sizeSky() {
-    sky.width = innerWidth * devicePixelRatio;
-    sky.height = innerHeight * devicePixelRatio;
+  function sizeTable() {
+    table.width = innerWidth * devicePixelRatio;
+    table.height = innerHeight * devicePixelRatio;
     ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
   }
-  addEventListener('resize', sizeSky);
-  sizeSky();
+  addEventListener('resize', sizeTable);
+  sizeTable();
 
-  // Jagged path between two points by repeated midpoint displacement.
-  function jag(x0, y0, x1, y1, spread) {
-    let pts = [[x0, y0], [x1, y1]];
-    for (let d = spread; d > 2; d /= 2) {
-      const next = [pts[0]];
-      for (let i = 1; i < pts.length; i++) {
-        const [ax, ay] = pts[i - 1], [bx, by] = pts[i];
-        next.push([(ax + bx) / 2 + (Math.random() - 0.5) * d, (ay + by) / 2 + (Math.random() - 0.5) * d * 0.4], [bx, by]);
-      }
-      pts = next;
-    }
-    return pts;
-  }
-
-  // A bolt is a main channel plus a few forks that peel off it.
-  function makeBolt(x1, y1, width) {
-    const x0 = x1 + (Math.random() - 0.5) * innerWidth * 0.3;
-    const main = jag(x0, -20, x1, y1, Math.max(120, y1 * 0.35));
-    const forks = [];
-    for (let i = 0; i < 4; i++) {
-      const [fx, fy] = main[Math.floor(main.length * (0.2 + Math.random() * 0.5))];
-      const len = 60 + Math.random() * 160;
-      const ang = Math.PI / 2 + (Math.random() - 0.5) * 1.6;
-      forks.push(jag(fx, fy, fx + Math.cos(ang) * len, fy + Math.sin(ang) * len, len * 0.6));
-    }
-    return { main, forks, width, born: performance.now() };
-  }
-
-  function stroke(pts, w, alpha) {
+  function drawBall(x, y, alpha) {
+    ctx.globalAlpha = alpha;
+    const g = ctx.createRadialGradient(x - BALL * 0.35, y - BALL * 0.4, BALL * 0.1, x, y, BALL);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.22, '#dfe4ec');
+    g.addColorStop(0.62, '#8a93a3');
+    g.addColorStop(1, '#2e3442');
+    ctx.fillStyle = g;
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = 'rgba(255, 210, 74, 0.55)';
     ctx.beginPath();
-    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    ctx.lineWidth = w;
-    ctx.strokeStyle = `rgba(200, 215, 255, ${alpha * 0.5})`;
-    ctx.shadowBlur = 30;
-    ctx.shadowColor = 'rgba(150, 180, 255, 0.9)';
-    ctx.stroke();
-    ctx.lineWidth = w * 0.5;
-    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-    ctx.shadowBlur = 8;
-    ctx.stroke();
+    ctx.arc(x, y, BALL, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
-  // Bolts flicker a couple of times, then fade.
-  const LIFE = 650;
-  function flickerAlpha(t) {
-    if (t < 90) return 1;
-    if (t < 140) return 0.25;
-    if (t < 210) return 1;
-    if (t < 250) return 0.35;
-    return Math.max(0, 0.85 * (1 - (t - 250) / (LIFE - 250)));
-  }
-
-  function drawSky(now) {
+  function drawTable(now) {
     ctx.clearRect(0, 0, innerWidth, innerHeight);
-    ctx.lineCap = ctx.lineJoin = 'round';
-    bolts = bolts.filter((b) => now - b.born < LIFE);
-    bolts.forEach((b) => {
-      const t = now - b.born;
-      const a = flickerAlpha(t);
-      // the bolt races down over the first few frames
-      const grow = Math.min(1, t / 45);
-      stroke(b.main.slice(0, Math.max(2, Math.ceil(b.main.length * grow))), b.width, a);
-      if (grow === 1) b.forks.forEach((f) => stroke(f, b.width * 0.45, a * 0.7));
-    });
-    skyRaf = bolts.length ? requestAnimationFrame(drawSky) : 0;
+    const pos = flight && flight(now);
+    if (pos) trail.push(pos); else flight = null;
+    trail = trail.slice(-6);
+    if (!pos) trail.shift();
+    trail.forEach(([x, y], i) => drawBall(x, y, i === trail.length - 1 && pos ? 1 : 0.08 + i * 0.05));
+    tableRaf = flight || trail.length ? requestAnimationFrame(drawTable) : 0;
   }
 
-  function strike(x, y, { width = 6, big = false } = {}) {
+  function fly(fn) {
     if (calm) return;
-    bolts.push(makeBolt(x, y, width));
-    if (!skyRaf) skyRaf = requestAnimationFrame(drawSky);
-    flashEl.style.setProperty('--fx', (x / innerWidth) * 100 + '%');
-    flashEl.classList.remove('go', 'big');
-    void flashEl.offsetWidth;
-    flashEl.classList.add('go');
-    flashEl.classList.toggle('big', big);
-    if (big) {
-      body.classList.remove('jolt');
-      void body.offsetWidth;
-      body.classList.add('jolt');
-    }
+    const t0 = performance.now();
+    trail = [];
+    flight = (now) => fn(now - t0);
+    if (!tableRaf) tableRaf = requestAnimationFrame(drawTable);
+  }
+
+  function bump(sel) {
+    const pad = document.querySelector(sel);
+    pad.classList.remove('hit');
+    void pad.offsetWidth;
+    pad.classList.add('hit');
+    setTimeout(() => pad.classList.remove('hit'), 600);
   }
 
   const padPoint = (sel) => {
@@ -498,45 +593,77 @@
     return [r.left + r.width / 2, r.top + r.height / 2];
   };
 
-  // While the word sits on screen, the odd distant strike keeps the storm going.
-  function ambient() {
-    clearTimeout(ambientTimer);
-    ambientTimer = setTimeout(() => {
+  // The plunger fires: the ball arcs up from the bottom and drops onto the left end of the rail.
+  function launch(ms) {
+    const [px, py] = padPoint('.pad.l');
+    const x0 = px - innerWidth * 0.18, y0 = innerHeight + 40;
+    const y1 = py - RIDE;
+    fly((t) => {
+      const k = Math.min(1, t / ms);
+      if (k >= 1) return null;
+      const e = 1 - Math.pow(1 - k, 2);
+      return [x0 + (px - x0) * e, y0 + (y1 - y0) * k - 160 * 4 * k * (1 - k)];
+    });
+  }
+
+  // Bumper kicks the ball up and away; it bounces off the right wall and drops out.
+  function ricochet() {
+    const [px, py] = padPoint('.pad.r');
+    let x = px, y = py - RIDE, vx = 0.5, vy = -1.25, last = 0;
+    fly((t) => {
+      const dt = t - last; last = t;
+      vy += 0.0032 * dt;
+      x += vx * dt; y += vy * dt;
+      if (x > innerWidth - BALL) { x = innerWidth - BALL; vx = -vx * 0.75; }
+      return y > innerHeight + 40 ? null : [x, y];
+    });
+  }
+
+  // While the word sits on screen, the letters run a chase light now and then.
+  function chase() {
+    clearTimeout(chaseTimer);
+    chaseTimer = setTimeout(() => {
       if (step !== 0) return;
-      const edge = Math.random() < 0.5 ? 0.1 : 0.9;
-      strike(innerWidth * (edge + (Math.random() - 0.5) * 0.12), innerHeight * (0.35 + Math.random() * 0.3), { width: 4 });
-      ambient();
-    }, 6000 + Math.random() * 6000);
+      body.classList.remove('chase');
+      void body.offsetWidth;
+      body.classList.add('chase');
+      chase();
+    }, 5000 + Math.random() * 4000);
   }
 
   function play() {
     clearTimeout(litTimer);
-    body.classList.remove('playing', 'lit', 'fresh');
-    void body.offsetWidth; // restart CSS animations
-    body.classList.add('playing');
-    // a bolt hits the left pad and sends the spark on its way
     clearTimeout(startTimer);
-    startTimer = setTimeout(() => strike(...padPoint('.pad.l'), { width: 7 }), 380);
+    clearTimeout(chaseTimer);
+    body.classList.remove('playing', 'lit', 'fresh', 'chase');
+    void body.offsetWidth; // restart CSS animations
+    body.classList.add('playing'); // rolling and letter flicker are delayed 0.5s in CSS
+    launch(500);
+    // ball lands on the left pad just as it starts rolling
+    startTimer = setTimeout(() => bump('.pad.l'), 500);
     litTimer = setTimeout(() => {
       body.classList.remove('playing');
       body.classList.add('lit', 'fresh');
-      // the circuit completes: two bolts slam into the word together
-      const r = wordEl.getBoundingClientRect();
-      strike(r.left + r.width * 0.3, r.top + r.height * 0.4, { width: 12, big: true });
-      setTimeout(() => strike(r.left + r.width * 0.72, r.top + r.height * 0.3, { width: 9 }), 90);
-      ambient();
+      bump('.pad.r');
+      ricochet();
+      body.classList.remove('jolt');
+      void body.offsetWidth;
+      body.classList.add('jolt');
+      chase();
     }, (0.5 + dur) * 1000);
   }
 
   function showLit() {
     clearTimeout(litTimer);
     clearTimeout(startTimer);
-    clearTimeout(ambientTimer);
-    body.classList.remove('playing', 'fresh');
+    clearTimeout(chaseTimer);
+    flight = null;
+    body.classList.remove('playing', 'fresh', 'chase');
     body.classList.add('lit');
   }
 
   function render() {
+    reqs.classList.toggle('started', step > 0);
     items.forEach((el, i) => {
       el.classList.toggle('shown', step >= i + 1);
       el.classList.toggle('current', step === i + 1);

@@ -191,6 +191,77 @@
     line-height: 1.35;
   }
 
+
+  /* ---------- last-class reveal ---------- */
+  .content { transition: filter 0.8s ease, transform 0.8s ease, opacity 0.8s ease; }
+  body.revealing .content { filter: blur(6px); transform: scale(0.95); opacity: 0.35; }
+
+  .reveal {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.4rem, 1.4vh, 0.9rem);
+    background: radial-gradient(circle at 50% 50%, rgba(26, 27, 46, 0.55) 0%, rgba(8, 8, 16, 0.92) 75%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.8s ease;
+  }
+  .reveal.on { opacity: 1; pointer-events: auto; }
+
+  .reveal .eyebrow { opacity: 0; transform: translateY(-10px); transition: all 0.6s ease 0.3s; }
+  .reveal.on .eyebrow { opacity: 1; transform: none; }
+
+  .meter2 {
+    position: relative;
+    width: clamp(240px, 34vw, 420px);
+    cursor: pointer;
+    transform: scale(0.85);
+    transition: transform 1.2s cubic-bezier(.2, .8, .2, 1);
+  }
+  .reveal.on .meter2 { transform: scale(1); }
+  .meter2 svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .ghost { fill: none; stroke: rgba(255, 255, 255, 0.14); stroke-width: 1.5; stroke-dasharray: 4 6; transition: all 0.3s ease; }
+  .ghost.tease { animation: tease 1.4s ease-in-out; }
+  @keyframes tease {
+    0%, 100% { fill: transparent; stroke: rgba(255, 255, 255, 0.14); }
+    20%, 55% { fill: rgba(255, 210, 74, 0.22); stroke: rgba(255, 210, 74, 0.8); }
+    35%, 75% { fill: rgba(255, 210, 74, 0.04); stroke: rgba(255, 210, 74, 0.3); }
+  }
+  .ghost.missing { stroke: rgba(255, 138, 92, 0.75); stroke-dasharray: 5 5; animation: march 1s linear infinite; }
+  @keyframes march { to { stroke-dashoffset: -20; } }
+
+  .meter2.tense .pizza { animation: tremble 0.12s linear infinite; }
+  @keyframes tremble {
+    0% { transform: translate(0, 0) rotate(0); }
+    25% { transform: translate(1.2px, -1px) rotate(0.4deg); }
+    50% { transform: translate(-1px, 1px) rotate(-0.3deg); }
+    75% { transform: translate(1px, 1px) rotate(0.3deg); }
+  }
+  .meter2.tense ~ .pct2 { animation: throb 0.9s ease-in-out infinite; }
+  @keyframes throb { 50% { transform: scale(1.08); text-shadow: 0 0 26px rgba(255, 138, 92, 0.7); } }
+
+  .pct2 {
+    color: #ffffff;
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+  }
+  .reveal.landed .pct2 { color: #ff8a5c; text-shadow: 0 0 28px rgba(255, 138, 92, 0.55); animation: slam 0.5s cubic-bezier(.3, 1.8, .5, 1); }
+  @keyframes slam { 0% { transform: scale(1.5); } 100% { transform: scale(1); } }
+
+  .verdict { text-align: center; opacity: 0; transform: translateY(16px) scale(0.9); transition: all 0.6s cubic-bezier(.3, 1.5, .5, 1); }
+  .reveal.landed .verdict { opacity: 1; transform: none; transition-delay: 0.5s; }
+  .verdict .big { color: #ffffff; font-size: clamp(1.6rem, 3.4vw, 2.6rem); font-weight: 900; }
+  .verdict .big span { color: #ffd24a; }
+  .verdict .small { margin-top: 0.3rem; color: rgba(255, 255, 255, 0.62); font-size: clamp(0.95rem, 1.6vw, 1.2rem); }
+
   @media (max-width: 760px) {
     .layout { grid-template-columns: 1fr; justify-items: center; }
   }
@@ -215,6 +286,22 @@
   </div>
 </div>
 
+<div class="reveal" id="reveal">
+  <div class="eyebrow">Last class's score</div>
+  <div class="meter2" id="meter2" title="Click to replay">
+    <svg viewBox="0 0 240 240" aria-label="Last class's pizza: 75% feedback">
+      <circle class="pan" cx="120" cy="120" r="112" />
+      <g id="ghosts"></g>
+      <g class="pizza" id="pizza2"></g>
+    </svg>
+  </div>
+  <div class="pct2" id="pct2">0%</div>
+  <div class="verdict">
+    <div class="big">So close. <span>Almost pizza.</span></div>
+    <div class="small">Let’s get it this time — every single one of us.</div>
+  </div>
+</div>
+
 <script>
   const ICONS = {
     star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
@@ -229,30 +316,41 @@
 
   // ---- pizza: 8 slices, each worth 12.5% ----
   const SLICES = 8;
-  const pizza = document.getElementById('pizza');
   const C = 120, R = 104, CR = 92;
+  const SVGNS = 'http://www.w3.org/2000/svg';
   const pt = (r, a) => [C + r * Math.cos(a), C + r * Math.sin(a)];
-  const slices = [];
-  for (let i = 0; i < SLICES; i++) {
+  const angles = (i) => {
     const a0 = -Math.PI / 2 + (i / SLICES) * Math.PI * 2;
-    const a1 = a0 + (Math.PI * 2) / SLICES;
-    const wedge = (r) => {
-      const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1);
-      return `M${C} ${C} L${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1} Z`;
-    };
-    const mid = (a0 + a1) / 2;
-    const peps = [[58, mid - 0.12], [80, mid + 0.14]].map(([r, a]) => {
-      const [x, y] = pt(r, a);
-      return `<circle class="pep" cx="${x}" cy="${y}" r="8"/>`;
-    }).join('');
-    const [ex, ey] = pt(R, a0);
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', 'slice');
-    g.innerHTML = `<path class="crust" d="${wedge(R)}"/><path class="cheese" d="${wedge(CR)}"/>${peps}` +
-      `<line class="cut" x1="${C}" y1="${C}" x2="${ex}" y2="${ey}"/>`;
-    pizza.appendChild(g);
-    slices.push(g);
+    return [a0, a0 + (Math.PI * 2) / SLICES];
+  };
+  const wedge = (i, r) => {
+    const [a0, a1] = angles(i);
+    const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1);
+    return `M${C} ${C} L${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1} Z`;
+  };
+
+  function buildPizza(root) {
+    const out = [];
+    for (let i = 0; i < SLICES; i++) {
+      const [a0, a1] = angles(i);
+      const mid = (a0 + a1) / 2;
+      const peps = [[58, mid - 0.12], [80, mid + 0.14]].map(([r, a]) => {
+        const [x, y] = pt(r, a);
+        return `<circle class="pep" cx="${x}" cy="${y}" r="8"/>`;
+      }).join('');
+      const [ex, ey] = pt(R, a0);
+      const g = document.createElementNS(SVGNS, 'g');
+      g.setAttribute('class', 'slice');
+      g.innerHTML = `<path class="crust" d="${wedge(i, R)}"/><path class="cheese" d="${wedge(i, CR)}"/>${peps}` +
+        `<line class="cut" x1="${C}" y1="${C}" x2="${ex}" y2="${ey}"/>`;
+      root.appendChild(g);
+      out.push(g);
+    }
+    return out;
   }
+
+  const pizza = document.getElementById('pizza');
+  const slices = buildPizza(pizza);
 
   const meter = document.getElementById('meter');
   const pctEl = document.getElementById('pct');
@@ -295,8 +393,96 @@
     return el;
   });
 
-  // Step 0 fills the pizza; each step after reveals one point.
-  const MAX = POINTS.length;
+  // ---- last class: suspenseful crawl up to 75% ----
+  const LAST_CLASS = 75;
+  const reveal = document.getElementById('reveal');
+  const meter2 = document.getElementById('meter2');
+  const pct2El = document.getElementById('pct2');
+  const slices2 = buildPizza(document.getElementById('pizza2'));
+  const ghosts = Array.from({ length: SLICES }, (_, i) => {
+    const p = document.createElementNS(SVGNS, 'path');
+    p.setAttribute('class', 'ghost');
+    p.setAttribute('d', wedge(i, R));
+    document.getElementById('ghosts').appendChild(p);
+    return p;
+  });
+
+  function setPct2(p) {
+    pct2El.textContent = Math.floor(p) + '%';
+    const n = Math.floor((p / 100) * SLICES + 1e-6);
+    slices2.forEach((s, i) => s.classList.toggle('on', i < n));
+  }
+
+  const easeInOut = (k) => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+  const crawl = (k) => 1 - Math.pow(1 - k, 5);
+  // Each beat: climb to `to`, then hang there for `hold` ms (trembling if `tense`).
+  const BEATS = [
+    { to: 25,   dur: 1300, hold: 450 },
+    { to: 50,   dur: 1500, hold: 800,  tense: true },
+    { to: 62.5, dur: 1700, hold: 1300, tense: true },
+    { to: 75,   dur: 3200, hold: 700,  tense: true, ease: crawl },
+  ];
+
+  let runId = 0;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  function tween(from, to, dur, ease, alive) {
+    return new Promise((resolve) => {
+      const t0 = performance.now();
+      const tick = (t) => {
+        if (!alive()) return resolve();
+        const k = Math.min(1, (t - t0) / dur);
+        setPct2(from + (to - from) * ease(k));
+        if (k < 1) requestAnimationFrame(tick); else resolve();
+      };
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function resetReveal() {
+    reveal.classList.remove('landed');
+    meter2.classList.remove('tense');
+    ghosts.forEach((g) => g.classList.remove('tease', 'missing'));
+    setPct2(0);
+  }
+
+  function land() {
+    meter2.classList.remove('tense');
+    setPct2(LAST_CLASS);
+    ghosts.forEach((g, i) => g.classList.toggle('missing', i >= (LAST_CLASS / 100) * SLICES));
+    reveal.classList.add('landed');
+  }
+
+  async function suspense() {
+    const id = ++runId;
+    const alive = () => id === runId;
+    resetReveal();
+    await wait(1100);
+    let at = 0;
+    for (const b of BEATS) {
+      if (!alive()) return;
+      meter2.classList.toggle('tense', !!b.tense && at >= 50);
+      await tween(at, b.to, b.dur, b.ease || easeInOut, alive);
+      at = b.to;
+      meter2.classList.toggle('tense', !!b.tense);
+      await wait(b.hold);
+    }
+    if (!alive()) return;
+    // Tease the 7th slice... then nope.
+    meter2.classList.remove('tense');
+    const next = ghosts[(LAST_CLASS / 100) * SLICES];
+    next.classList.add('tease');
+    await wait(1500);
+    if (!alive()) return;
+    next.classList.remove('tease');
+    land();
+  }
+
+  function showLanded() { runId++; resetReveal(); land(); }
+
+  meter2.addEventListener('click', suspense);
+
+  // Step 0 fills the pizza; then each point; the final step reveals last class's score.
+  const MAX = POINTS.length + 1;
   let step = 0;
 
   function render() {
@@ -304,6 +490,10 @@
       el.classList.toggle('shown', step >= i + 1);
       el.classList.toggle('current', step === i + 1);
     });
+    const on = step === MAX;
+    reveal.classList.toggle('on', on);
+    document.body.classList.toggle('revealing', on);
+    if (!on) runId++;
   }
 
   // Deck step protocol: the deck sends {deck:'step', dir} and {deck:'enter', at}.
@@ -314,6 +504,7 @@
     step = n;
     if (step > 0) full();
     render();
+    if (step === MAX) suspense();
   }
 
   window.addEventListener('message', (e) => {
@@ -323,6 +514,7 @@
       step = d.at === 'end' ? MAX : 0;
       if (step === 0) fill(); else full();
       render();
+      if (step === MAX) showLanded();
     }
   });
 
